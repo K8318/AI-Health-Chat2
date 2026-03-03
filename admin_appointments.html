@@ -1,0 +1,109 @@
+{% extends 'core/base.html' %}
+{% block title %}All Appointments — MediBot Admin{% endblock %}
+{% block page_title %}<i class="fas fa-clipboard-list me-2"></i>All Appointments{% endblock %}
+{% block content %}
+
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-center">
+      <select name="status" class="form-select form-select-sm" style="max-width:160px" onchange="this.form.submit()">
+        <option value="">All Statuses</option>
+        <option value="pending"   {% if status_filter == 'pending'   %}selected{% endif %}>Pending</option>
+        <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmed</option>
+        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+      </select>
+
+      <select name="type" class="form-select form-select-sm" style="max-width:160px" onchange="this.form.submit()">
+        <option value="">All Types</option>
+        <option value="normal"    {% if type_filter == 'normal'    %}selected{% endif %}>Normal</option>
+        <option value="emergency" {% if type_filter == 'emergency' %}selected{% endif %}>Emergency</option>
+      </select>
+
+      {% if status_filter or type_filter %}
+      <a href="{% url 'admin_appointments' %}" class="btn btn-sm"
+         style="border:1px solid #334155;color:#94a3b8;border-radius:8px">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Patient</th>
+          <th>Doctor</th>
+          <th>Date / Time</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Update Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for appt in appointments %}
+        <tr>
+          <td style="font-size:0.8rem;color:#64748b">{{ appt.pk }}</td>
+
+          <td>
+            <div style="font-size:0.875rem;font-weight:500">
+              {{ appt.patient.get_full_name|default:appt.patient.username }}
+            </div>
+            <div style="font-size:0.72rem;color:#64748b">{{ appt.patient.email }}</div>
+          </td>
+
+          <td>
+            <div style="font-size:0.875rem">Dr. {{ appt.doctor.name }}</div>
+            <div style="font-size:0.72rem;color:#64748b">{{ appt.doctor.specialization }}</div>
+          </td>
+
+          <td style="font-size:0.8rem">
+            {{ appt.date }}
+            <div style="color:#64748b">{{ appt.time }}</div>
+          </td>
+
+          <td>
+            {% if appt.appointment_type == 'emergency' %}
+              <span class="badge-emergency">🚨 Emergency</span>
+            {% else %}
+              <span style="color:#64748b;font-size:0.78rem">Normal</span>
+            {% endif %}
+          </td>
+
+          <td><span class="badge-{{ appt.status }}">{{ appt.status|capfirst }}</span></td>
+
+          <td>
+            <form method="post" action="{% url 'admin_update_appointment' appt.pk %}"
+                  class="d-flex gap-1">
+              {% csrf_token %}
+              <select name="status" class="form-select form-select-sm"
+                      style="width:115px;font-size:0.75rem">
+                <option value="pending"   {% if appt.status == 'pending'   %}selected{% endif %}>Pending</option>
+                <option value="confirmed" {% if appt.status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                <option value="cancelled" {% if appt.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                <option value="completed" {% if appt.status == 'completed' %}selected{% endif %}>Completed</option>
+              </select>
+              <button type="submit" class="btn btn-primary btn-sm"
+                      style="border-radius:6px;font-size:0.72rem">
+                Update
+              </button>
+            </form>
+          </td>
+        </tr>
+
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-5" style="color:#64748b">
+            <i class="fas fa-calendar-times"
+               style="font-size:2rem;opacity:0.3;display:block;margin-bottom:0.75rem"></i>
+            No appointments found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends 'core/base.html' %}
+{% block title %}Appointments — MediBot{% endblock %}
+{% block page_title %}<i class="fas fa-calendar-check me-2" style="color:#0ea5e9"></i>Appointments{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Book Appointment -->
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header d-flex align-items-center gap-2">
+        <i class="fas fa-plus-circle" style="color:#0ea5e9"></i>
+        <strong>Book Appointment</strong>
+      </div>
+      <div class="card-body p-3">
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label">Appointment Type</label>
+            {{ form.appointment_type }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Select Doctor</label>
+            {{ form.doctor }}
+          </div>
+          <div class="row g-3">
+            <div class="col-6">
+              <label class="form-label">Date</label>
+              {{ form.date }}
+            </div>
+            <div class="col-6">
+              <label class="form-label">Time</label>
+              {{ form.time }}
+            </div>
+          </div>
+          <div class="mb-3 mt-3">
+            <label class="form-label">Reason</label>
+            {{ form.reason }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Symptoms (optional)</label>
+            {{ form.symptoms }}
+          </div>
+          <!-- Emergency alert -->
+          <div id="emergencyAlert" style="display:none;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:10px;padding:0.75rem;margin-bottom:1rem;font-size:0.82rem;color:#fca5a5">
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            <strong>Emergency appointment selected!</strong> You will be given priority. For life-threatening emergencies, call <strong>911</strong> immediately.
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="fas fa-calendar-plus me-1"></i> Book Appointment
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- My Appointments -->
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fas fa-list" style="color:#0ea5e9"></i>
+          <strong>My Appointments</strong>
+        </div>
+        <span class="badge bg-secondary">{{ appointments.count }}</span>
+      </div>
+      <div class="card-body p-0">
+        {% if appointments %}
+        <div class="table-responsive">
+          <table class="table mb-0">
+            <thead><tr>
+              <th>Doctor</th><th>Date & Time</th><th>Type</th><th>Status</th><th></th>
+            </tr></thead>
+            <tbody>
+              {% for appt in appointments %}
+              <tr>
+                <td>
+                  <div style="font-weight:500;font-size:0.875rem">Dr. {{ appt.doctor.name }}</div>
+                  <div style="font-size:0.75rem;color:#64748b">{{ appt.doctor.specialization }}</div>
+                </td>
+                <td>
+                  <div style="font-size:0.875rem">{{ appt.date }}</div>
+                  <div style="font-size:0.75rem;color:#64748b">{{ appt.time }}</div>
+                </td>
+                <td>
+                  {% if appt.appointment_type == 'emergency' %}
+                    <span class="badge-emergency">🚨 Emergency</span>
+                  {% else %}
+                    <span style="font-size:0.75rem;color:#94a3b8">Normal</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge-{{ appt.status }}">{{ appt.status|capfirst }}</span>
+                </td>
+                <td>
+                  {% if appt.status == 'pending' %}
+                  <a href="{% url 'cancel_appointment' appt.pk %}" onclick="return confirm('Cancel this appointment?')"
+                     class="btn btn-sm" style="border:1px solid #ef4444;color:#ef4444;border-radius:6px;font-size:0.72rem">Cancel</a>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5" style="color:#64748b">
+          <i class="fas fa-calendar-times" style="font-size:2.5rem;margin-bottom:1rem;display:block;opacity:0.4"></i>
+          <p>No appointments yet.</p>
+          <p style="font-size:0.82rem">Book your first appointment using the form.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelector('[name="appointment_type"]').addEventListener('change', function() {
+  document.getElementById('emergencyAlert').style.display = this.value === 'emergency' ? 'block' : 'none';
+});
+// Auto-select emergency if coming from chat emergency button
+if (window.location.search.includes('type=emergency')) {
+  const sel = document.querySelector('[name="appointment_type"]');
+  if (sel) { sel.value = 'emergency'; sel.dispatchEvent(new Event('change')); }
+}
+</script>
+{% endblock %}
